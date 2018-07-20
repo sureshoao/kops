@@ -15,6 +15,7 @@
 FROM alpine:3.6
 
 ARG GO_VERSION=1.8.1
+ARG HELM_LATEST_VERSION="v2.9.1"
 
 # KOPS_GITISH: Modify to build at an explicit tag/gitish
 ARG KOPS_GITISH=release
@@ -52,6 +53,15 @@ RUN set -ex && \
         apk del build-dependencies && \
         rm -rf /var/cache/apk/* && \
         \
+        apk add --update ca-certificates \
+        && apk add --update -t deps wget \
+        && wget https://storage.googleapis.com/kubernetes-helm/helm-${HELM_LATEST_VERSION}-linux-amd64.tar.gz \
+        && tar -xvf helm-${HELM_LATEST_VERSION}-linux-amd64.tar.gz \
+        && mv linux-amd64/helm /usr/local/bin \
+        && apk del --purge deps \
+        && rm /var/cache/apk/* \
+        && rm -f /helm-${HELM_LATEST_VERSION}-linux-amd64.tar.gz
+        
         echo "=== Built kops at ${KOPS_GITISH}, fetched kubectl ${KUBECTL_VERSION} ==="
 
-ENTRYPOINT ["/usr/bin/kops"]
+ENTRYPOINT ["/usr/bin/kops","helm""]
